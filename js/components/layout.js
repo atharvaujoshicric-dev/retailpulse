@@ -1,6 +1,5 @@
 import { auth, theme } from '../lib/store.js'
 
-// navigate is patched by app.js after boot; use a late-binding call
 function go(page) { window.__navigate(page) }
 
 const NAV = [
@@ -18,7 +17,8 @@ let mobileOpen = false
 export function renderLayout(pageId, contentHTML, alertCount = 0) {
   const user = auth.user()
   const isDark = theme.get() === 'dark'
-  const label = NAV.find(n=>n.id===pageId)?.label || (pageId==='settings'?'Settings':'')
+  const isAdmin = auth.isAdmin()
+  const label = [...NAV, {id:'settings',label:'Settings'},{id:'admin',label:'GODMODE'}].find(n=>n.id===pageId)?.label || ''
 
   document.getElementById('app').innerHTML = `
     <div class="layout">
@@ -30,7 +30,7 @@ export function renderLayout(pageId, contentHTML, alertCount = 0) {
             <i data-lucide="trending-up" style="width:16px;height:16px"></i>
           </div>
           <span class="logo-text">RetailPulse</span>
-          <button class="btn-icon" id="close-mobile" style="margin-left:auto;display:none" class="hamburger">
+          <button class="btn-icon" id="close-mobile" style="margin-left:auto">
             <i data-lucide="x" style="width:16px;height:16px"></i>
           </button>
         </div>
@@ -45,16 +45,26 @@ export function renderLayout(pageId, contentHTML, alertCount = 0) {
         </nav>
 
         <div class="sidebar-bottom">
+          ${isAdmin ? `
+          <button class="nav-item${pageId==='admin'?' active':''}" data-page="admin"
+            style="${pageId==='admin'?'':''}background:${pageId==='admin'?'rgba(139,92,246,.15)':'none'};${pageId!=='admin'?'':''}">
+            <i data-lucide="shield-check" style="width:18px;height:18px;flex-shrink:0;color:${pageId==='admin'?'#a78bfa':'#8b5cf6'}"></i>
+            <span class="nav-label" style="color:${pageId==='admin'?'#a78bfa':'#8b5cf6'};font-weight:600">GODMODE</span>
+          </button>
+          ` : ''}
           <button class="nav-item${pageId==='settings'?' active':''}" data-page="settings">
             <i data-lucide="settings" style="width:18px;height:18px;flex-shrink:0"></i>
             <span class="nav-label">Settings</span>
           </button>
           ${user ? `
           <div class="user-row">
-            <div class="avatar">${user.name?.[0]||'U'}</div>
-            <div class="user-info flex-1 min-w-0">
-              <div class="name truncate">${user.name}</div>
-              <div class="role">${user.role}</div>
+            <div class="avatar" style="${isAdmin?'background:linear-gradient(135deg,#8b5cf6,#14b8a6)':''}">${user.name?.[0]||'U'}</div>
+            <div class="user-info flex-1" style="min-width:0">
+              <div class="name truncate" style="display:flex;align-items:center;gap:5px">
+                ${user.name}
+                ${isAdmin?`<i data-lucide="shield-check" style="width:11px;height:11px;color:#a78bfa;flex-shrink:0"></i>`:''}
+              </div>
+              <div class="role" style="${isAdmin?'color:#a78bfa':''}">${isAdmin?'Super Admin':user.role}</div>
             </div>
             <button class="btn-icon" id="logout-btn" title="Logout">
               <i data-lucide="log-out" style="width:15px;height:15px"></i>
@@ -69,11 +79,18 @@ export function renderLayout(pageId, contentHTML, alertCount = 0) {
 
       <div class="main-wrap" id="main-wrap" style="margin-left:${collapsed?64:240}px">
         <header class="topbar">
-          <button class="icon-btn" id="menu-btn" style="display:none">
+          <button class="icon-btn" id="menu-btn">
             <i data-lucide="menu" style="width:20px;height:20px"></i>
           </button>
-          <h1>${label}</h1>
+          <h1 style="${pageId==='admin'?'background:linear-gradient(90deg,#a78bfa,#14b8a6);-webkit-background-clip:text;-webkit-text-fill-color:transparent':''}">
+            ${pageId==='admin'?'⚡ GODMODE — Super Admin':label}
+          </h1>
           <div class="topbar-actions">
+            <!-- Role pill -->
+            ${user?`
+            <span style="padding:4px 10px;border-radius:99px;font-size:11px;font-weight:600;background:${isAdmin?'rgba(139,92,246,.15)':auth.isManager()?'rgba(59,130,246,.15)':'rgba(148,163,184,.1)'};color:${isAdmin?'#a78bfa':auth.isManager()?'#60a5fa':'#94a3b8'};border:1px solid ${isAdmin?'rgba(139,92,246,.3)':auth.isManager()?'rgba(59,130,246,.3)':'rgba(148,163,184,.2)'}">
+              ${isAdmin?'⚡ GODMODE':auth.isManager()?'👔 Manager':'👤 User'}
+            </span>`:''}
             <button class="icon-btn" id="alerts-btn" title="Alerts">
               <i data-lucide="bell" style="width:18px;height:18px"></i>
               ${alertCount>0?`<span class="badge-dot">${alertCount>9?'9+':alertCount}</span>`:''}
@@ -92,14 +109,9 @@ export function renderLayout(pageId, contentHTML, alertCount = 0) {
 
   lucide.createIcons()
 
-  // Mobile responsive
   const isMobile = () => window.innerWidth < 768
   const menuBtn = document.getElementById('menu-btn')
-  const closeMobileBtn = document.getElementById('close-mobile')
-  if (isMobile()) {
-    if(menuBtn) menuBtn.style.display='flex'
-    if(closeMobileBtn) closeMobileBtn.style.display='flex'
-  }
+  if (menuBtn) menuBtn.style.display = isMobile() ? 'flex' : 'none'
 
   const closeM = () => {
     mobileOpen = false
@@ -112,15 +124,13 @@ export function renderLayout(pageId, contentHTML, alertCount = 0) {
     document.getElementById('sidebar').classList.add('mobile-open')
     document.getElementById('overlay').classList.add('active')
   })
-  closeMobileBtn?.addEventListener('click', closeM)
+  document.getElementById('close-mobile')?.addEventListener('click', closeM)
   document.getElementById('overlay')?.addEventListener('click', closeM)
 
   document.getElementById('collapse-btn')?.addEventListener('click', () => {
     collapsed = !collapsed
-    const sb = document.getElementById('sidebar')
-    const mw = document.getElementById('main-wrap')
-    sb.classList.toggle('collapsed', collapsed)
-    mw.style.marginLeft = (collapsed?64:240)+'px'
+    document.getElementById('sidebar').classList.toggle('collapsed', collapsed)
+    document.getElementById('main-wrap').style.marginLeft = (collapsed?64:240)+'px'
     document.getElementById('collapse-btn').innerHTML =
       `<i data-lucide="${collapsed?'chevron-right':'chevron-left'}" style="width:13px;height:13px"></i>`
     lucide.createIcons()
@@ -128,8 +138,7 @@ export function renderLayout(pageId, contentHTML, alertCount = 0) {
 
   document.getElementById('theme-btn')?.addEventListener('click', () => {
     const t = theme.toggle()
-    const icon = document.getElementById('theme-btn').querySelector('i')
-    icon.setAttribute('data-lucide', t==='dark'?'sun':'moon')
+    document.getElementById('theme-btn').querySelector('i').setAttribute('data-lucide', t==='dark'?'sun':'moon')
     lucide.createIcons()
   })
 
@@ -141,9 +150,7 @@ export function renderLayout(pageId, contentHTML, alertCount = 0) {
   })
 
   window.addEventListener('resize', () => {
-    const mobile = isMobile()
-    if(menuBtn) menuBtn.style.display=mobile?'flex':'none'
-    if(closeMobileBtn) closeMobileBtn.style.display=mobile?'flex':'none'
-    if(!mobile) closeM()
-  }, { once: true })
+    if(menuBtn) menuBtn.style.display=isMobile()?'flex':'none'
+    if(!isMobile()) closeM()
+  }, {once:true})
 }

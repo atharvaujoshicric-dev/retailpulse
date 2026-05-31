@@ -150,3 +150,34 @@ export const MOCK = {
     ]
   }
 }
+
+// ── Persistent Inventory (localStorage backed) ───────────────
+
+const INV_KEY = 'retailpulse-inventory'
+
+export const invStore = {
+  _default() { return JSON.parse(JSON.stringify(MOCK.inventory)) },
+  getAll() {
+    try { return JSON.parse(localStorage.getItem(INV_KEY) || 'null') || this._default() } catch { return this._default() }
+  },
+  save(items) { localStorage.setItem(INV_KEY, JSON.stringify(items)) },
+  add(item) {
+    const items = this.getAll()
+    const newItem = {
+      ...item,
+      id: Date.now()+'',
+      product_id: Date.now()+'p',
+    }
+    items.push(newItem)
+    this.save(items)
+    return newItem
+  },
+  update(id, updates) {
+    const items = this.getAll().map(i => i.id===id ? {...i,...updates} : i)
+    this.save(items)
+  },
+  delete(id) {
+    this.save(this.getAll().filter(i => i.id!==id))
+  },
+  reset() { localStorage.removeItem(INV_KEY) }
+}

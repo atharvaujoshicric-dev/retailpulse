@@ -1,5 +1,4 @@
 import { auth } from '../lib/store.js'
-import { navigate } from '../app.js'
 
 export function renderLogin() {
   document.getElementById('app').innerHTML = `
@@ -36,22 +35,24 @@ export function renderLogin() {
             </div>
           </div>
 
-          <div id="login-error" style="display:none;color:#f87171;font-size:12px;margin-bottom:12px"></div>
+          <div id="login-error" style="display:none;padding:10px 12px;border-radius:8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;font-size:13px;margin-bottom:12px"></div>
 
           <button id="login-btn" class="btn btn-primary" style="width:100%;justify-content:center;padding:10px">
             Sign in
           </button>
 
           <div class="demo-block">
-            <p style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:8px">Demo Credentials</p>
-            <button class="demo-cred" data-email="admin@retailpulse.ai" data-pw="Admin123!">
-              <span style="color:#cbd5e1;font-weight:600">Admin</span>
-              <span style="font-family:monospace">admin@retailpulse.ai</span>
-            </button>
-            <button class="demo-cred" data-email="demo@retailpulse.ai" data-pw="Demo123!">
-              <span style="color:#cbd5e1;font-weight:600">User</span>
-              <span style="font-family:monospace">demo@retailpulse.ai</span>
-            </button>
+            <p style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:8px">Demo Accounts</p>
+            ${[
+              {role:'⚡ Admin (GODMODE)',email:'admin@retailpulse.ai',pw:'Admin123!',color:'#a78bfa'},
+              {role:'👔 Manager',email:'manager@retailpulse.ai',pw:'Manager1!',color:'#60a5fa'},
+              {role:'👤 User',email:'demo@retailpulse.ai',pw:'Demo123!',color:'#94a3b8'},
+            ].map(c=>`
+              <button class="demo-cred" data-email="${c.email}" data-pw="${c.pw}">
+                <span style="font-weight:600;color:${c.color}">${c.role}</span>
+                <span style="font-family:monospace;font-size:11px">${c.email}</span>
+              </button>
+            `).join('')}
           </div>
         </div>
       </div>
@@ -71,16 +72,22 @@ export function renderLogin() {
     btn.addEventListener('click', () => {
       document.getElementById('email-inp').value = btn.dataset.email
       document.getElementById('pw-inp').value = btn.dataset.pw
+      document.getElementById('login-error').style.display = 'none'
     })
   })
 
-  document.getElementById('login-btn').addEventListener('click', () => {
-    const email = document.getElementById('email-inp').value
-    auth.login(email)
-    navigate('dashboard')
-  })
+  const doLogin = () => {
+    const email = document.getElementById('email-inp').value.trim()
+    const pw    = document.getElementById('pw-inp').value
+    const user  = auth.login(email, pw)
+    if (!user) {
+      document.getElementById('login-error').textContent = 'Invalid email or password.'
+      document.getElementById('login-error').style.display = 'block'
+      return
+    }
+    window.__navigate('dashboard')
+  }
 
-  document.getElementById('pw-inp').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('login-btn').click()
-  })
+  document.getElementById('login-btn').addEventListener('click', doLogin)
+  document.getElementById('pw-inp').addEventListener('keydown', e => { if(e.key==='Enter') doLogin() })
 }

@@ -355,3 +355,53 @@ tr:hover td { background: var(--surface2); }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── Modals ── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.65);
+  z-index: 999; display: flex; align-items: center; justify-content: center;
+  padding: 16px; backdrop-filter: blur(4px);
+  animation: fadeIn .15s ease;
+}
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; width: 100%; max-width: 560px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5);
+  animation: slideUp .2s ease;
+  max-height: 90vh; overflow-y: auto;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 20px 20px 16px; border-bottom: 1px solid var(--border); gap: 12px;
+}
+.modal-body { padding: 20px; }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 20px; border-top: 1px solid var(--border);
+}
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:480px){ .modal-grid { grid-template-columns: 1fr; } }
+
+.form-group label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--muted); margin-bottom: 6px;
+}
+.form-group input[readonly] { opacity: .6; cursor: not-allowed; }
+
+/* ── Row action buttons ── */
+.row-action-btn {
+  width: 30px; height: 30px; border-radius: 7px; border: none;
+  background: var(--surface2); color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.row-action-btn:hover { background: rgba(20,184,166,.15); color: var(--brand); }
+.row-action-btn.row-action-danger:hover { background: rgba(239,68,68,.15); color: var(--red); }
+.row-action-btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
+
+/* ── Admin GODMODE ── */
+@media(max-width:640px){
+  .admin-stats-grid { grid-template-columns: 1fr 1fr !important; }
+}

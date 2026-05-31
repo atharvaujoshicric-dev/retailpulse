@@ -1,12 +1,13 @@
 import { auth, theme } from './lib/store.js'
-import { renderLogin } from './pages/login.js'
+import { renderLogin }     from './pages/login.js'
 import { renderDashboard } from './pages/dashboard.js'
-import { renderForecast } from './pages/forecast.js'
+import { renderForecast }  from './pages/forecast.js'
 import { renderInventory } from './pages/inventory.js'
-import { renderAlerts } from './pages/alerts.js'
-import { renderProducts } from './pages/products.js'
-import { renderImpact } from './pages/impact.js'
-import { renderSettings } from './pages/settings.js'
+import { renderAlerts }    from './pages/alerts.js'
+import { renderProducts }  from './pages/products.js'
+import { renderImpact }    from './pages/impact.js'
+import { renderSettings }  from './pages/settings.js'
+import { renderAdmin }     from './pages/admin.js'
 
 const ROUTES = {
   login:     renderLogin,
@@ -17,6 +18,7 @@ const ROUTES = {
   products:  renderProducts,
   impact:    renderImpact,
   settings:  renderSettings,
+  admin:     renderAdmin,
 }
 
 export function navigate(page) {
@@ -25,12 +27,17 @@ export function navigate(page) {
     renderLogin()
     return
   }
+  // Gate admin page to admin only
+  if (page === 'admin' && !auth.isAdmin()) {
+    history.pushState(null, '', '#dashboard')
+    renderDashboard()
+    return
+  }
   history.pushState(null, '', '#' + page)
   const fn = ROUTES[page] || ROUTES.dashboard
   fn()
 }
 
-// Expose for layout.js (avoids circular import)
 window.__navigate = navigate
 
 function routeFromHash() {
